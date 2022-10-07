@@ -1,0 +1,14 @@
+{
+  "channels": [
+    {
+      "name": "",
+      "emotes": [
+        {
+          "name": "",
+          "cnt": 10,
+          "cooldown": 10
+        }
+      ]
+    }
+  ]
+}
