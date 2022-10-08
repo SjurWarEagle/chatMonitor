@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class Chats {
 
-    public Map<String, EmotesPerInterval> chat2emotesPerInterval = new HashMap<>();
+    public Map<String, EmotesPerIntervalTrigger> chat2emotesPerInterval = new HashMap<>();
 
     public Integer getNumberOfEmotesInInterval(String chat,String emote){
         if (!chat2emotesPerInterval.containsKey(chat)){
@@ -19,5 +19,5 @@ public class Chats {
             return;
         }
         chat2emotesPerInterval.get(chat).rememberEmote(emote);
-    };
+    }
 }

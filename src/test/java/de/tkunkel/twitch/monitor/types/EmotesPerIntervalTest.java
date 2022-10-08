@@ -8,8 +8,16 @@ import java.util.concurrent.TimeUnit;
 class EmotesPerIntervalTest {
 
     @Test
+    public void testRememberAndRead() {
+        EmotesPerIntervalTrigger emotesPerInterval = new EmotesPerIntervalTrigger(2, 100, TimeUnit.MILLISECONDS, 1_000, TimeUnit.MILLISECONDS);
+        emotesPerInterval.rememberEmote("A");
+        int numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(1, numberOfEmotesInInterval);
+    }
+
+    @Test
     public void testRemoveObsoleteEntries() throws InterruptedException {
-        EmotesPerInterval emotesPerInterval = new EmotesPerInterval(100, TimeUnit.MILLISECONDS);
+        EmotesPerIntervalTrigger emotesPerInterval = new EmotesPerIntervalTrigger(2, 100, TimeUnit.MILLISECONDS, 1_000, TimeUnit.MILLISECONDS);
         emotesPerInterval.rememberEmote("A");
         emotesPerInterval.removeObsoleteEntries("A");
         int numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
@@ -22,39 +30,63 @@ class EmotesPerIntervalTest {
 
     @Test
     public void testGetNumberOfEmotesInInterval_withWait() throws InterruptedException {
-        EmotesPerInterval emotesPerInterval = new EmotesPerInterval(100, TimeUnit.MILLISECONDS);
+        EmotesPerIntervalTrigger emotesPerInterval = new EmotesPerIntervalTrigger(10, 100, TimeUnit.MILLISECONDS, 1_000, TimeUnit.MILLISECONDS);
         Integer numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
         Assertions.assertEquals(0, numberOfEmotesInInterval);
 
+        emotesPerInterval.rememberEmote("A");
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(1, numberOfEmotesInInterval);
+
+        Thread.sleep(50);
+        emotesPerInterval.rememberEmote("A");
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(2, numberOfEmotesInInterval);
+
+        Thread.sleep(300);
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(2, numberOfEmotesInInterval);
+
+        Thread.sleep(300);
+        emotesPerInterval.rememberEmote("A");
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(1, numberOfEmotesInInterval);
+    }
+
+    @Test
+    public void testAddingAndTrigger() throws InterruptedException {
+        EmotesPerIntervalTrigger emotesPerInterval = new EmotesPerIntervalTrigger(3, 100, TimeUnit.MILLISECONDS, 1_000, TimeUnit.MILLISECONDS);
+        Integer numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(0, numberOfEmotesInInterval);
+
+        emotesPerInterval.rememberEmote("A");
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(1, numberOfEmotesInInterval);
+
+        Thread.sleep(150);
         emotesPerInterval.rememberEmote("A");
         numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
         Assertions.assertEquals(1, numberOfEmotesInInterval);
 
         Thread.sleep(10);
-        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
-        Assertions.assertEquals(1, numberOfEmotesInInterval);
-
-        Thread.sleep(200);
-        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
-        Assertions.assertEquals(1, numberOfEmotesInInterval);
-
         emotesPerInterval.rememberEmote("A");
-        Thread.sleep(200);
         numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
-        Assertions.assertEquals(1, numberOfEmotesInInterval);
+        Assertions.assertEquals(2, numberOfEmotesInInterval);
+
+        Thread.sleep(10);
+        emotesPerInterval.rememberEmote("A");
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        //fixme test trigger
+        Assertions.assertEquals(0, numberOfEmotesInInterval);
     }
 
     @Test
-    public void testGetNumberOfEmotesInInterval_withWait_and_multiple() throws InterruptedException {
-        EmotesPerInterval emotesPerInterval = new EmotesPerInterval(100, TimeUnit.MILLISECONDS);
+    public void testTriggerAndAddingDuringCooldown() throws InterruptedException {
+        EmotesPerIntervalTrigger emotesPerInterval = new EmotesPerIntervalTrigger(3, 100, TimeUnit.MILLISECONDS, 200, TimeUnit.MILLISECONDS);
         Integer numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
         Assertions.assertEquals(0, numberOfEmotesInInterval);
 
         emotesPerInterval.rememberEmote("A");
-        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
-        Assertions.assertEquals(1, numberOfEmotesInInterval);
-
-        Thread.sleep(50);
         emotesPerInterval.rememberEmote("A");
         numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
         Assertions.assertEquals(2, numberOfEmotesInInterval);
@@ -62,22 +94,50 @@ class EmotesPerIntervalTest {
         Thread.sleep(50);
         emotesPerInterval.rememberEmote("A");
         numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(0, numberOfEmotesInInterval);
+        boolean received = emotesPerInterval.readEventFiredMarkerAndSetToReceived("A");
+        Assertions.assertTrue(received);
+        //only once triggered?
+        received = emotesPerInterval.readEventFiredMarkerAndSetToReceived("A");
+        Assertions.assertFalse(received);
+
+        //still cooldown
+        Thread.sleep(50);
+        emotesPerInterval.rememberEmote("A");
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        received = emotesPerInterval.readEventFiredMarkerAndSetToReceived("A");
+        Assertions.assertFalse(received);
+        Assertions.assertEquals(0, numberOfEmotesInInterval);
+    }
+
+    @Test
+    public void testTriggerAndAddingAfterCooldown() throws InterruptedException {
+        EmotesPerIntervalTrigger emotesPerInterval = new EmotesPerIntervalTrigger(3, 100, TimeUnit.MILLISECONDS, 200, TimeUnit.MILLISECONDS);
+        Integer numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        Assertions.assertEquals(0, numberOfEmotesInInterval);
+
+        emotesPerInterval.rememberEmote("A");
+        emotesPerInterval.rememberEmote("A");
+        numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
         Assertions.assertEquals(2, numberOfEmotesInInterval);
 
         Thread.sleep(50);
         emotesPerInterval.rememberEmote("A");
         numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
-        Assertions.assertEquals(2, numberOfEmotesInInterval);
+        //fixme test trigger
+        Assertions.assertEquals(0, numberOfEmotesInInterval);
 
-        Thread.sleep(200);
+        //after cooldown
+        Thread.sleep(250);
         emotesPerInterval.rememberEmote("A");
         numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
+        //fixme test trigger
         Assertions.assertEquals(1, numberOfEmotesInInterval);
     }
 
     @Test
     public void testGetNumberOfEmotesInInterval_noWait() {
-        EmotesPerInterval emotesPerInterval = new EmotesPerInterval(2, TimeUnit.SECONDS);
+        EmotesPerIntervalTrigger emotesPerInterval = new EmotesPerIntervalTrigger(20, 2, TimeUnit.SECONDS, 1_000, TimeUnit.MILLISECONDS);
 
         Integer numberOfEmotesInInterval = emotesPerInterval.getNumberOfEmotesInInterval("A");
         Assertions.assertEquals(0, numberOfEmotesInInterval);

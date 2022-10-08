@@ -11,6 +11,7 @@ import de.tkunkel.twitch.monitor.types.config.ConfigChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Objects;
@@ -19,15 +20,15 @@ import java.util.Objects;
 public class Starter {
 
     public static void main(String[] args) {
+        Starter starter = new Starter();
+        starter.startMonitor();
+    }
+
+    private void startMonitor() {
         Logger logger = LoggerFactory.getLogger(Starter.class.getName());
 
-        Gson gson = new Gson();
-        InputStream configSource = Starter.class.getClassLoader().getResourceAsStream("private_config.json");
-        if (Objects.isNull(configSource)) {
-            throw new RuntimeException("private_config.json not found!");
-        }
-        Config config = gson.fromJson(new InputStreamReader(configSource), Config.class);
-//         chat credential
+        Config config = readConfig();
+        // chat credential
         String accessToken = config.accessToken;
         OAuth2Credential credential = new OAuth2Credential("twitch", accessToken);
 
@@ -40,13 +41,32 @@ public class Starter {
 
         EventManager eventManager = twitchClient.getEventManager();
 
+        connectToChannels(logger, config, twitchClient);
+
+        MessageProcessor messageProcessor = new MessageProcessor(config);
+
+        //noinspection CodeBlock2Expr
+        eventManager.onEvent(ChannelMessageEvent.class, event -> {
+            messageProcessor.process(event.getChannel().getName()
+                    , event.getMessage()
+            );
+        });
+
+    }
+
+    private static void connectToChannels(Logger logger, Config config, TwitchClient twitchClient) {
         for (ConfigChannel channel : config.channels) {
-            logger.info("Connecting to channel '"+channel.name+"'");
+            logger.info("Connecting to channel '" + channel.name + "'");
             twitchClient.getChat().joinChannel(channel.name);
         }
+    }
 
-        eventManager.onEvent(ChannelMessageEvent.class, event -> {
-            logger.info("[" + event.getChannel().getName() + "] " + event.getUser().getName() + ": " + event.getMessage());
-        });
+    private static Config readConfig() {
+        Gson gson = new Gson();
+        InputStream configSource = Starter.class.getClassLoader().getResourceAsStream("private_config.json");
+        if (Objects.isNull(configSource)) {
+            throw new RuntimeException("private_config.json not found!");
+        }
+        return gson.fromJson(new InputStreamReader(configSource), Config.class);
     }
 }

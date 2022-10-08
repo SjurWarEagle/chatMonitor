@@ -19,14 +19,16 @@ class EmoteDetectorTest {
     public void test_simple() {
         EmoteDetector emoteDetector = new EmoteDetector();
 
-        Assertions.assertTrue(emoteDetector.containsEmote("This is a test", "a"));
-        Assertions.assertTrue(emoteDetector.containsEmote("This is a test", "a test"));
-        Assertions.assertTrue(emoteDetector.containsEmote("This is a test", "this"));
-        Assertions.assertTrue(emoteDetector.containsEmote("All 🦕 are cool even 🦖!", "🦕"));
+        Assertions.assertTrue(emoteDetector.containsEmote("i", "This is a test"));
+        Assertions.assertTrue(emoteDetector.containsEmote("a", "This is a test"));
+        Assertions.assertTrue(emoteDetector.containsEmote("a test", "This is a test"));
+        Assertions.assertTrue(emoteDetector.containsEmote("this", "This is a test"));
+        Assertions.assertTrue(emoteDetector.containsEmote("a", "[amouranth] nabeeght: CRINGEEEEEEEEEEEEEEEE"));
+        Assertions.assertTrue(emoteDetector.containsEmote("🦕", "All 🦕 are cool even 🦖!"));
 
-        Assertions.assertFalse(emoteDetector.containsEmote("This is a test", "aa"));
-        Assertions.assertFalse(emoteDetector.containsEmote("This is a test", "b"));
-        Assertions.assertFalse(emoteDetector.containsEmote("This is a test", "a is"));
+        Assertions.assertFalse(emoteDetector.containsEmote("aa","This is a test"));
+        Assertions.assertFalse(emoteDetector.containsEmote("b","This is a test"));
+        Assertions.assertFalse(emoteDetector.containsEmote("a is","This is a test"));
     }
 
 }
