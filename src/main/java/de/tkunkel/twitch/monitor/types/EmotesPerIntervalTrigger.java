@@ -19,7 +19,7 @@ public class EmotesPerIntervalTrigger {
     }
 
     public boolean readEventFiredMarkerAndSetToReceived(String emote) {
-        if (!emotesEventsRead.get(emote)) {
+        if (!emotesEventsRead.containsKey(emote)) {
             emotesEventsRead.put(emote, true);
             return true;
         }

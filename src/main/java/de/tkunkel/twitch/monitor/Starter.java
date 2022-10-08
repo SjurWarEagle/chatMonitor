@@ -10,20 +10,32 @@ import de.tkunkel.twitch.monitor.types.config.Config;
 import de.tkunkel.twitch.monitor.types.config.ConfigChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
 
+import javax.annotation.PostConstruct;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
 @SpringBootApplication
+@EnableAutoConfiguration
+@ComponentScan(basePackageClasses = Starter.class)
+@EntityScan(basePackageClasses = Starter.class)
 public class Starter {
 
+    @Autowired
+    private MessageProcessor messageProcessor;
+
     public static void main(String[] args) {
-        Starter starter = new Starter();
-        starter.startMonitor();
+        SpringApplication.run(Starter.class, args);
     }
 
+    @PostConstruct
     private void startMonitor() {
         Logger logger = LoggerFactory.getLogger(Starter.class.getName());
 
@@ -43,7 +55,7 @@ public class Starter {
 
         connectToChannels(logger, config, twitchClient);
 
-        MessageProcessor messageProcessor = new MessageProcessor(config);
+        messageProcessor.setConfig(config);
 
         //noinspection CodeBlock2Expr
         eventManager.onEvent(ChannelMessageEvent.class, event -> {

@@ -7,12 +7,12 @@ public class Chats {
 
     public Map<String, EmotesPerIntervalTrigger> chat2emotesPerInterval = new HashMap<>();
 
-    public Integer getNumberOfEmotesInInterval(String chat,String emote){
-        if (!chat2emotesPerInterval.containsKey(chat)){
-            return 0;
-        }
-        return chat2emotesPerInterval.get(chat).getNumberOfEmotesInInterval(emote);
-    }
+//    public Integer getNumberOfEmotesInInterval(String chat,String emote){
+//        if (!chat2emotesPerInterval.containsKey(chat)){
+//            return 0;
+//        }
+//        return chat2emotesPerInterval.get(chat).getNumberOfEmotesInInterval(emote);
+//    }
 
     public void rememberEmote(String chat,String emote){
         if (!chat2emotesPerInterval.containsKey(chat)){
